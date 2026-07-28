@@ -20,9 +20,17 @@ require_command docker
 mkdir -p "$DIST_DIR"
 rm -f "$UPSTREAM_DIR"/bootstrap-"$TERMUX_ARCH".zip
 
+builder_path="$PATH"
+if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
+    # GitHub-hosted runners expose AppArmor tooling but do not allow the
+    # upstream helper to replace its restricted profile. Hiding sbin skips
+    # that host-only profile step inside an isolated, ephemeral runner.
+    builder_path="/usr/local/bin:/usr/bin:/bin"
+fi
+
 (
     cd "$UPSTREAM_DIR"
-    CI=true CONTAINER_NAME="piperos-termux-$TERMUX_ARCH" \
+    PATH="$builder_path" CI=true CONTAINER_NAME="piperos-termux-$TERMUX_ARCH" \
         ./scripts/run-docker.sh \
         ./scripts/build-bootstraps.sh \
         -f \
