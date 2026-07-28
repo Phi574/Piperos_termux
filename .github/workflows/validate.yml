@@ -20,7 +20,9 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck
 
       - name: Validate runtime configuration
-        run: ./scripts/validate-config.sh
+        run: |
+          ./scripts/validate-config.sh
+          ./scripts/validate-package-set.py config/package-set.txt
 
       - name: Check shell scripts
         run: shellcheck scripts/*.sh
@@ -37,4 +39,3 @@ jobs:
           test -s THIRD_PARTY_NOTICES.md
           grep -q "GNU GENERAL PUBLIC LICENSE" LICENSE
           grep -q "GPL-3.0-only" COPYRIGHT
-

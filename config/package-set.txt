@@ -3,5 +3,5 @@
 python
 git
 openssh
-clang
-
+# The libllvm source recipe emits the user-facing clang subpackage.
+libllvm

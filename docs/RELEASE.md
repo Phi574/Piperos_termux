@@ -27,3 +27,17 @@ the public key.
 
 Do not publish an unsigned production manifest.
 
+## Package repository release
+
+1. Configure the dedicated OpenPGP secret described in
+   `docs/PACKAGE_REPOSITORY.md`.
+2. Verify `config/package-set.txt`.
+3. Run `Build package repository` manually and inspect all three artifacts.
+4. Create a `packages-v<version>` tag.
+5. Push the tag and wait for all architecture, repository and deploy jobs.
+6. Verify `InRelease`, `Release.gpg`, package indexes and checksums at the
+   GitHub Pages endpoint.
+7. Update the Android client's pinned repository key only through a reviewed
+   application release.
+
+Never publish a production package repository with `trusted=yes`.

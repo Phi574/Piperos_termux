@@ -1,0 +1,124 @@
+name: Build package repository
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "packages-v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: packages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build packages ${{ matrix.android_abi }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        android_abi:
+          - arm64-v8a
+          - armeabi-v7a
+          - x86_64
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Free runner disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc
+          docker system prune --all --force
+          df -h
+
+      - name: Build PiperOS package set
+        run: |
+          ./scripts/run-with-progress.sh \
+            "dist/logs/packages-${{ matrix.android_abi }}.log" \
+            ./scripts/build-package-set.sh \
+            "${{ matrix.android_abi }}"
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: piperos-package-log-${{ matrix.android_abi }}
+          path: dist/logs
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload architecture packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: piperos-packages-${{ matrix.android_abi }}
+          path: dist/packages/${{ matrix.android_abi }}
+          if-no-files-found: error
+          retention-days: 14
+
+  repository:
+    name: Assemble APT repository
+    needs: build
+    runs-on: ubuntu-24.04
+    env:
+      PIPEROS_APT_SIGNING_KEY_B64: ${{ secrets.PIPEROS_APT_SIGNING_KEY_B64 }}
+      PIPEROS_REQUIRE_APT_SIGNATURE: ${{ startsWith(github.ref, 'refs/tags/packages-v') }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install repository tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apt-utils dpkg-dev gnupg xz-utils
+
+      - name: Download architecture packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: piperos-packages-*
+          path: dist/package-input
+
+      - name: Assemble and verify repository
+        run: |
+          ./scripts/assemble-apt-repository.sh \
+            dist/package-input \
+            dist/apt-repository
+          test -s dist/apt-repository/dists/stable/Release
+          find dist/apt-repository/dists/stable -name Packages.gz \
+            -type f -size +0c | grep -q .
+
+      - name: Upload repository artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: piperos-apt-repository
+          path: dist/apt-repository
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Prepare GitHub Pages artifact
+        if: startsWith(github.ref, 'refs/tags/packages-v')
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/apt-repository
+
+  deploy:
+    name: Deploy package repository
+    if: startsWith(github.ref, 'refs/tags/packages-v')
+    needs: repository
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

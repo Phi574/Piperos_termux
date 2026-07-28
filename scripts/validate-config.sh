@@ -19,6 +19,12 @@ fail() {
 ((PIPEROS_MIN_API >= 24)) || fail "minimum API must be at least 24"
 [[ "$PIPEROS_RUNTIME_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[a-z0-9.-]+$ ]] ||
     fail "runtime version must resemble 2.5.0-beta.1"
+[[ "$PIPEROS_APT_REPOSITORY_URL" =~ ^https://[^/]+(/[^/]+)*$ ]] ||
+    fail "APT repository URL must be an HTTPS URL without a trailing slash"
+[[ "$PIPEROS_APT_SUITE" =~ ^[a-z0-9][a-z0-9.-]*$ ]] ||
+    fail "APT suite contains unsupported characters"
+[[ "$PIPEROS_APT_COMPONENT" =~ ^[a-z0-9][a-z0-9.-]*$ ]] ||
+    fail "APT component contains unsupported characters"
 [[ "$TERMUX_PACKAGES_COMMIT" =~ ^[0-9a-f]{40}$ ]] ||
     fail "upstream revision must be a full 40-character commit"
 
@@ -35,3 +41,4 @@ echo "PiperOS runtime configuration is valid."
 printf '  application id: %s\n' "$PIPEROS_APP_PACKAGE_NAME"
 printf '  prefix:         %s\n' "$PIPEROS_PREFIX"
 printf '  Android ABIs:   %s\n' "$PIPEROS_ANDROID_ABIS"
+printf '  APT repository: %s\n' "$PIPEROS_APT_REPOSITORY_URL"

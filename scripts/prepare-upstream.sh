@@ -117,6 +117,23 @@ if source.count(obsolete) != 1:
 path.write_text(source.replace(obsolete, current), encoding="utf-8")
 PY
 
+"$PYTHON_BIN" - "$UPSTREAM_DIR/packages/termux-tools/build.sh" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+source = path.read_text(encoding="utf-8")
+obsolete = 'TERMUX_PKG_DEPENDS="bzip2,'
+current = 'TERMUX_PKG_DEPENDS="libbz2,'
+
+if source.count(obsolete) != 1:
+    raise SystemExit(
+        "Upstream termux-tools dependencies changed: expected one bzip2 entry"
+    )
+
+path.write_text(source.replace(obsolete, current), encoding="utf-8")
+PY
+
 grep -Fqx "TERMUX_APP__PACKAGE_NAME=\"$PIPEROS_APP_PACKAGE_NAME\"" \
     "$UPSTREAM_DIR/scripts/properties.sh" ||
     { echo "Patched application id verification failed" >&2; exit 1; }
@@ -135,11 +152,15 @@ grep -Fq 'CURL_OPTIONS+=(--insecure)' \
 grep -Fqx $'\t\tPACKAGES+=("libbz2")' \
     "$UPSTREAM_DIR/scripts/build-bootstraps.sh" ||
     { echo "Bootstrap libbz2 package patch failed" >&2; exit 1; }
+grep -Fq 'TERMUX_PKG_DEPENDS="libbz2,' \
+    "$UPSTREAM_DIR/packages/termux-tools/build.sh" ||
+    { echo "termux-tools libbz2 dependency patch failed" >&2; exit 1; }
 
 cat >"$UPSTREAM_DIR/PIPEROS_BUILD_METADATA" <<EOF
 PIPEROS_APP_PACKAGE_NAME=$PIPEROS_APP_PACKAGE_NAME
 PIPEROS_RUNTIME_VERSION=$PIPEROS_RUNTIME_VERSION
 PIPEROS_PREFIX=$PIPEROS_PREFIX
+PIPEROS_APT_REPOSITORY_URL=$PIPEROS_APT_REPOSITORY_URL
 TERMUX_PACKAGES_COMMIT=$TERMUX_PACKAGES_COMMIT
 EOF
 

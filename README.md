@@ -43,6 +43,7 @@ source.
 ./scripts/build-bootstrap.sh arm64-v8a
 ./scripts/build-bootstrap.sh armeabi-v7a
 ./scripts/build-bootstrap.sh x86_64
+./scripts/build-package-set.sh arm64-v8a
 ./scripts/generate-manifest.py \
   --input dist \
   --output dist/runtime-manifest.json \
@@ -60,6 +61,9 @@ prefix differs from PiperOS.
 - `Build bootstrap archives` builds the three supported ABIs. Manual runs
   retain build artifacts. A tag matching `runtime-v*` additionally creates a
   signed GitHub Release.
+- `Build package repository` compiles the package set for all three ABIs.
+  Manual runs retain preview artifacts. A signed `packages-v*` tag publishes
+  the APT repository to GitHub Pages.
 
 Before creating the first runtime tag, add the repository secret
 `PIPEROS_MANIFEST_SIGNING_KEY_B64`. Its value is the base64 encoding of the
@@ -78,8 +82,12 @@ Never commit the private key.
 The initial optional package set is stored in
 [`config/package-set.txt`](config/package-set.txt). Python, Git, OpenSSH and
 Clang remain optional packages so the first bootstrap download stays small.
-A dedicated signed APT repository workflow will be added after the bootstrap
-has completed successfully for all three architectures.
+The dedicated repository workflow builds their complete dependency graph,
+generates architecture-specific APT indexes, signs the Release metadata and
+deploys to `https://phi574.github.io/Piperos_termux`.
+
+See [`docs/PACKAGE_REPOSITORY.md`](docs/PACKAGE_REPOSITORY.md) for signing,
+publishing and client configuration.
 
 ## Licensing
 
