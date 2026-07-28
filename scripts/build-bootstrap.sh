@@ -23,8 +23,12 @@ rm -f "$UPSTREAM_DIR"/bootstrap-"$TERMUX_ARCH".zip
 builder_path="$PATH"
 if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     # GitHub-hosted runners expose AppArmor tooling but do not allow the
-    # upstream helper to replace its restricted profile. Hiding sbin skips
-    # that host-only profile step inside an isolated, ephemeral runner.
+    # upstream helper to replace its restricted profile. Use Docker's
+    # unconfined profile only inside the isolated, ephemeral CI runner and
+    # hide sbin so the upstream helper does not try to load another profile.
+    sed -i \
+        's/--security-opt apparmor=_custom-termux-package-builder-$CONTAINER_NAME/--security-opt apparmor=unconfined/' \
+        "$UPSTREAM_DIR/scripts/run-docker.sh"
     builder_path="/usr/local/bin:/usr/bin:/bin"
 fi
 
