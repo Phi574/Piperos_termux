@@ -136,9 +136,11 @@ EOF
 
 (
     cd "$OUTPUT_DIR"
+    checksum_file="$(mktemp)"
     find . -type f ! -name SHA256SUMS -print0 |
         sort -z |
-        xargs -0 sha256sum >SHA256SUMS
+        xargs -0 sha256sum >"$checksum_file"
+    mv "$checksum_file" SHA256SUMS
 )
 
 echo "Created APT repository with $package_count package files at $OUTPUT_DIR"
