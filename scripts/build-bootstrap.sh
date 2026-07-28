@@ -37,7 +37,6 @@ fi
     PATH="$builder_path" CI=true CONTAINER_NAME="piperos-termux-$TERMUX_ARCH" \
         ./scripts/run-docker.sh \
         ./scripts/build-bootstraps.sh \
-        -f \
         --architectures "$TERMUX_ARCH"
 )
 
