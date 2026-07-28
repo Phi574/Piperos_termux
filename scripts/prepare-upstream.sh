@@ -64,6 +64,42 @@ if source.count(upstream) != 1:
 path.write_text(source.replace(upstream, mirror), encoding="utf-8")
 PY
 
+"$PYTHON_BIN" - "$UPSTREAM_DIR/scripts/build/termux_download.sh" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+source = path.read_text(encoding="utf-8")
+needle = '''\
+\tTMPFILE=$(mktemp "$TERMUX_PKG_TMPDIR/download.${TERMUX_PKG_NAME-unnamed}.XXXXXXXXX")
+\tif [[ "${TERMUX_QUIET_BUILD-}" == "true" ]]; then
+'''
+replacement = '''\
+\tTMPFILE=$(mktemp "$TERMUX_PKG_TMPDIR/download.${TERMUX_PKG_NAME-unnamed}.XXXXXXXXX")
+
+\t# X.Org currently redirects release files to a host with an expired TLS
+\t# certificate. Permit that host only when the recipe pins the exact SHA-256;
+\t# the normal checksum verification below remains mandatory.
+\tif [[ "$URL" == https://xorg.freedesktop.org/* ]]; then
+\t\tif [[ -z "$CHECKSUM" || "$CHECKSUM" == "SKIP_CHECKSUM" ]]; then
+\t\t\techo "Refusing unchecked download from X.Org TLS fallback: $URL" 1>&2
+\t\t\treturn 1
+\t\tfi
+\t\techo "Using checksum-verified X.Org TLS fallback for $URL"
+\t\tCURL_OPTIONS+=(--insecure)
+\tfi
+
+\tif [[ "${TERMUX_QUIET_BUILD-}" == "true" ]]; then
+'''
+
+if source.count(needle) != 1:
+    raise SystemExit(
+        "Upstream downloader changed: expected exactly one curl setup block"
+    )
+
+path.write_text(source.replace(needle, replacement), encoding="utf-8")
+PY
+
 grep -Fqx "TERMUX_APP__PACKAGE_NAME=\"$PIPEROS_APP_PACKAGE_NAME\"" \
     "$UPSTREAM_DIR/scripts/properties.sh" ||
     { echo "Patched application id verification failed" >&2; exit 1; }
@@ -76,6 +112,9 @@ grep -Fqx 'TERMUX__PREFIX_SUBDIR="usr"' "$UPSTREAM_DIR/scripts/properties.sh" ||
 grep -Fq 'https://mirror.metanet.ch/BLFS/12.3/Xorg/' \
     "$UPSTREAM_DIR/packages/xorg-util-macros/build.sh" ||
     { echo "X.Org mirror patch verification failed" >&2; exit 1; }
+grep -Fq 'CURL_OPTIONS+=(--insecure)' \
+    "$UPSTREAM_DIR/scripts/build/termux_download.sh" ||
+    { echo "Checksum-verified X.Org TLS fallback patch failed" >&2; exit 1; }
 
 cat >"$UPSTREAM_DIR/PIPEROS_BUILD_METADATA" <<EOF
 PIPEROS_APP_PACKAGE_NAME=$PIPEROS_APP_PACKAGE_NAME
