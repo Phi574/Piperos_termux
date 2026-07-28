@@ -1,0 +1,7 @@
+# Optional packages for the first PiperOS package repository.
+# One source package name per line.
+python
+git
+openssh
+clang
+

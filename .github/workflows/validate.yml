@@ -1,0 +1,40 @@
+name: Validate repository
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install validation tools
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Validate runtime configuration
+        run: ./scripts/validate-config.sh
+
+      - name: Check shell scripts
+        run: shellcheck scripts/*.sh
+
+      - name: Check Python syntax and tests
+        run: |
+          python3 -m compileall -q scripts tests
+          python3 -m unittest discover -s tests -v
+
+      - name: Check licensing files
+        run: |
+          test -s LICENSE
+          test -s COPYRIGHT
+          test -s THIRD_PARTY_NOTICES.md
+          grep -q "GNU GENERAL PUBLIC LICENSE" LICENSE
+          grep -q "GPL-3.0-only" COPYRIGHT
+
