@@ -41,6 +41,29 @@ if source.count(needle) != 1:
 path.write_text(source.replace(needle, replacement), encoding="utf-8")
 PY
 
+"$PYTHON_BIN" - "$UPSTREAM_DIR/packages/xorg-util-macros/build.sh" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+source = path.read_text(encoding="utf-8")
+upstream = (
+    "https://xorg.freedesktop.org/releases/individual/util/"
+    "util-macros-${TERMUX_PKG_VERSION}.tar.xz"
+)
+mirror = (
+    "https://mirror.metanet.ch/BLFS/12.3/Xorg/"
+    "util-macros-${TERMUX_PKG_VERSION}.tar.xz"
+)
+
+if source.count(upstream) != 1:
+    raise SystemExit(
+        "Upstream xorg-util-macros source changed: expected exactly one URL"
+    )
+
+path.write_text(source.replace(upstream, mirror), encoding="utf-8")
+PY
+
 grep -Fqx "TERMUX_APP__PACKAGE_NAME=\"$PIPEROS_APP_PACKAGE_NAME\"" \
     "$UPSTREAM_DIR/scripts/properties.sh" ||
     { echo "Patched application id verification failed" >&2; exit 1; }
@@ -50,6 +73,9 @@ grep -Fqx 'TERMUX_APP__DATA_DIR="/data/data/$TERMUX_APP__PACKAGE_NAME"' \
     { echo "Upstream data directory contract changed" >&2; exit 1; }
 grep -Fqx 'TERMUX__PREFIX_SUBDIR="usr"' "$UPSTREAM_DIR/scripts/properties.sh" ||
     { echo "Upstream prefix contract changed" >&2; exit 1; }
+grep -Fq 'https://mirror.metanet.ch/BLFS/12.3/Xorg/' \
+    "$UPSTREAM_DIR/packages/xorg-util-macros/build.sh" ||
+    { echo "X.Org mirror patch verification failed" >&2; exit 1; }
 
 cat >"$UPSTREAM_DIR/PIPEROS_BUILD_METADATA" <<EOF
 PIPEROS_APP_PACKAGE_NAME=$PIPEROS_APP_PACKAGE_NAME
