@@ -4,6 +4,15 @@ PiperOS Termux Runtime builds an on-device terminal environment for the
 PiperOS Android application. Runtime archives and packages are compiled for
 the PiperOS application id and cannot be mixed with official Termux packages.
 
+## Companion Android application
+
+This runtime is developed together with
+[`Phi574/PiperOSTool-Android`](https://github.com/Phi574/PiperOSTool-Android).
+The Android repository contains the PiperOS user interface, browser, media
+player, device tools, and terminal service. This repository owns only the
+Linux bootstrap, package build configuration, signing manifest, and future
+package repository.
+
 ## Runtime contract
 
 | Setting | Value |
@@ -82,4 +91,3 @@ Termux contains components under multiple licenses. In particular,
 `terminal-emulator` and `terminal-view` are Apache-2.0, while Termux-specific
 application code is GPL-3.0-only. Preserve upstream notices and file-level
 license exceptions when copying or modifying upstream source.
-
