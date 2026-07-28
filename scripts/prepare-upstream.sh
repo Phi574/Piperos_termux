@@ -100,6 +100,23 @@ if source.count(needle) != 1:
 path.write_text(source.replace(needle, replacement), encoding="utf-8")
 PY
 
+"$PYTHON_BIN" - "$UPSTREAM_DIR/scripts/build-bootstraps.sh" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+source = path.read_text(encoding="utf-8")
+obsolete = '\t\tPACKAGES+=("bzip2")'
+current = '\t\tPACKAGES+=("libbz2")'
+
+if source.count(obsolete) != 1:
+    raise SystemExit(
+        "Upstream bootstrap package list changed: expected exactly one bzip2 entry"
+    )
+
+path.write_text(source.replace(obsolete, current), encoding="utf-8")
+PY
+
 grep -Fqx "TERMUX_APP__PACKAGE_NAME=\"$PIPEROS_APP_PACKAGE_NAME\"" \
     "$UPSTREAM_DIR/scripts/properties.sh" ||
     { echo "Patched application id verification failed" >&2; exit 1; }
@@ -115,6 +132,9 @@ grep -Fq 'https://mirror.metanet.ch/BLFS/12.3/Xorg/' \
 grep -Fq 'CURL_OPTIONS+=(--insecure)' \
     "$UPSTREAM_DIR/scripts/build/termux_download.sh" ||
     { echo "Checksum-verified X.Org TLS fallback patch failed" >&2; exit 1; }
+grep -Fqx $'\t\tPACKAGES+=("libbz2")' \
+    "$UPSTREAM_DIR/scripts/build-bootstraps.sh" ||
+    { echo "Bootstrap libbz2 package patch failed" >&2; exit 1; }
 
 cat >"$UPSTREAM_DIR/PIPEROS_BUILD_METADATA" <<EOF
 PIPEROS_APP_PACKAGE_NAME=$PIPEROS_APP_PACKAGE_NAME
