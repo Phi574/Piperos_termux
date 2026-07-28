@@ -27,7 +27,7 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     # unconfined profile only inside the isolated, ephemeral CI runner and
     # hide sbin so the upstream helper does not try to load another profile.
     sed -i \
-        's/--security-opt apparmor=_custom-termux-package-builder-$CONTAINER_NAME/--security-opt apparmor=unconfined/' \
+        "s/--security-opt apparmor=_custom-termux-package-builder-\$CONTAINER_NAME/--security-opt apparmor=unconfined/" \
         "$UPSTREAM_DIR/scripts/run-docker.sh"
     builder_path="/usr/local/bin:/usr/bin:/bin"
 fi
