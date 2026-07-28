@@ -6,6 +6,8 @@ Thumbs.db
 .work/
 dist/
 output/
+__pycache__/
+*.py[cod]
 *.log
 *.deb
 *.zip
@@ -15,4 +17,3 @@ output/
 keys/private/
 *.key
 *-private.pem
-
