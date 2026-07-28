@@ -99,8 +99,10 @@ if [[ -n "${PIPEROS_APT_SIGNING_KEY_B64:-}" ]]; then
             --list-secret-keys |
             awk -F: '$1 == "fpr" { print $10; exit }'
     )"
-    [[ -n "$fingerprint" ]] ||
-        { echo "APT signing key has no secret key" >&2; exit 1; }
+    [[ "$fingerprint" == "$PIPEROS_APT_KEY_FINGERPRINT" ]] || {
+        echo "APT signing key does not match pinned public key" >&2
+        exit 1
+    }
 
     gpg --batch --yes --homedir "$signing_home" \
         --local-user "$fingerprint" \
@@ -112,9 +114,8 @@ if [[ -n "${PIPEROS_APT_SIGNING_KEY_B64:-}" ]]; then
         --armor --clearsign \
         --output "$release_dir/InRelease" \
         "$release_dir/Release"
-    gpg --batch --homedir "$signing_home" \
-        --export "$fingerprint" \
-        >"$OUTPUT_DIR/piperos-archive-keyring.gpg"
+    cp "$PIPEROS_REPO_ROOT/keys/apt-repository-public.gpg" \
+        "$OUTPUT_DIR/piperos-archive-keyring.gpg"
 elif [[ "${PIPEROS_REQUIRE_APT_SIGNATURE:-false}" == "true" ]]; then
     echo "Missing PIPEROS_APT_SIGNING_KEY_B64 for production publish" >&2
     exit 1

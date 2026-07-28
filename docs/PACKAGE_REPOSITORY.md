@@ -61,6 +61,12 @@ The production endpoint is:
 https://phi574.github.io/Piperos_termux
 ```
 
+Pinned signing-key fingerprint:
+
+```text
+322C E397 F439 E57D 589F  C2EC 700F 8680 4882 BE7E
+```
+
 ## Signing setup
 
 Create a dedicated OpenPGP signing key on an offline trusted machine:
@@ -76,7 +82,8 @@ gpg --armor --export-secret-keys \
 
 Store the base64 output in the GitHub Actions secret
 `PIPEROS_APT_SIGNING_KEY_B64`. Keep an offline backup of the private key.
-Never commit it.
+Never commit it. The public key is committed as
+`keys/apt-repository-public.gpg`.
 
 Manual workflow runs create an unsigned preview artifact when the secret is
 not configured. A production `packages-v*` tag requires the signing secret,

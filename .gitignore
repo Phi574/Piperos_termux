@@ -17,3 +17,5 @@ __pycache__/
 keys/private/
 *.key
 *-private.pem
+*-private.asc
+.gnupg/
