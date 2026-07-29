@@ -18,7 +18,7 @@ GPL-3.0-only code is distributed.
 GitHub tags should identify exact release source:
 
 ```text
-runtime-v2.5.0-beta.1
+runtime-v2.5.5-beta
 ```
 
 The Android app's About/Licenses screen should show:
@@ -33,4 +33,3 @@ Publishing this runtime repository under GPLv3 does not automatically add a
 license file to the separate PiperOS Android repository. When GPL-covered
 Termux application code is linked into the APK, the Android source repository
 must also publish the corresponding source and licensing notices for that APK.
-

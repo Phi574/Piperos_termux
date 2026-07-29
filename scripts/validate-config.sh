@@ -19,6 +19,8 @@ fail() {
 ((PIPEROS_MIN_API >= 24)) || fail "minimum API must be at least 24"
 [[ "$PIPEROS_RUNTIME_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[a-z0-9.-]+$ ]] ||
     fail "runtime version must resemble 2.5.0-beta.1"
+[[ "$PIPEROS_BOOTSTRAP_ADDITIONAL_PACKAGES" =~ ^[a-z0-9+._-]+(,[a-z0-9+._-]+)*$ ]] ||
+    fail "additional bootstrap packages must be a comma-separated package list"
 [[ "$PIPEROS_APT_REPOSITORY_URL" =~ ^https://[^/]+(/[^/]+)*$ ]] ||
     fail "APT repository URL must be an HTTPS URL without a trailing slash"
 [[ "$PIPEROS_APT_SUITE" =~ ^[a-z0-9][a-z0-9.-]*$ ]] ||

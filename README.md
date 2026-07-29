@@ -47,7 +47,7 @@ source.
 ./scripts/generate-manifest.py \
   --input dist \
   --output dist/runtime-manifest.json \
-  --base-url https://github.com/Phi574/Piperos_termux/releases/download/runtime-v2.5.0-beta.1
+  --base-url https://github.com/Phi574/Piperos_termux/releases/download/runtime-v2.5.5-beta
 ```
 
 The first build is intentionally expensive. Packages compiled for
@@ -71,17 +71,18 @@ PEM Ed25519 private key matching `keys/manifest-public.pem`.
 
 ```bash
 base64 -w 0 manifest-private.pem
-git tag runtime-v2.5.0-beta.1
-git push origin runtime-v2.5.0-beta.1
+git tag runtime-v2.5.5-beta
+git push origin runtime-v2.5.5-beta
 ```
 
 Never commit the private key.
 
 ## Package set
 
-The initial optional package set is stored in
-[`config/package-set.txt`](config/package-set.txt). Python, Git, OpenSSH and
-Clang remain optional packages so the first bootstrap download stays small.
+The optional repository package set is stored in
+[`config/package-set.txt`](config/package-set.txt). Runtime `2.5.5-beta`
+also includes Python, Git, OpenSSH and Clang directly in every bootstrap so
+the core developer tools are available immediately after installation.
 The dedicated repository workflow builds their complete dependency graph,
 generates architecture-specific APT indexes, signs the Release metadata and
 deploys to `https://phi574.github.io/Piperos_termux`.
