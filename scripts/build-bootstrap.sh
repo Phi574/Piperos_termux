@@ -30,6 +30,14 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
         "s/--security-opt apparmor=_custom-termux-package-builder-\$CONTAINER_NAME/--security-opt apparmor=unconfined/" \
         "$UPSTREAM_DIR/scripts/run-docker.sh"
     builder_path="/usr/local/bin:/usr/bin:/bin"
+
+    if [[ "$TERMUX_ARCH" == "x86_64" ]]; then
+        # LLVM's x86 backend has the highest peak linker memory use. Keeping
+        # two workers prevents the hosted runner from killing a compiler
+        # process while still allowing the long build to make progress.
+        export TERMUX_DOCKER_EXEC_EXTRA_ARGS="${TERMUX_DOCKER_EXEC_EXTRA_ARGS:-} --env TERMUX_PKG_MAKE_PROCESSES=2"
+        echo "PiperOS x86_64 memory guard: TERMUX_PKG_MAKE_PROCESSES=2"
+    fi
 fi
 
 (
