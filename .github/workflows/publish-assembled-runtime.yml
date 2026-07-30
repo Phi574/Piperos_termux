@@ -1,0 +1,92 @@
+name: Publish assembled runtime
+
+on:
+  push:
+    tags:
+      - "publish-runtime-v*"
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: publish-assembled-runtime
+  cancel-in-progress: false
+
+env:
+  ARM_RUN_ID: "30423555538"
+  X86_RUN_ID: "30470500346"
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SIGNING_KEY_B64: ${{ secrets.PIPEROS_MANIFEST_SIGNING_KEY_B64 }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Download successful architecture artifacts
+        run: |
+          mkdir -p dist/downloads dist/release
+          gh run download "$ARM_RUN_ID" \
+            --name piperos-bootstrap-arm64-v8a \
+            --dir dist/downloads/arm64-v8a
+          gh run download "$ARM_RUN_ID" \
+            --name piperos-bootstrap-armeabi-v7a \
+            --dir dist/downloads/armeabi-v7a
+          gh run download "$X86_RUN_ID" \
+            --name piperos-bootstrap-x86_64 \
+            --dir dist/downloads/x86_64
+
+          find dist/downloads -type f \
+            \( -name 'piperos-bootstrap-*.zip' -o -name 'piperos-bootstrap-*.sha256' \) \
+            -exec cp '{}' dist/release/ \;
+
+          test "$(find dist/release -maxdepth 1 -name '*.zip' | wc -l)" -eq 3
+          ls -lh dist/release
+
+      - name: Generate and verify manifest
+        run: |
+          target_tag="${GITHUB_REF_NAME#publish-}"
+          release_base_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${target_tag}"
+          ./scripts/generate-manifest.py \
+            --input dist/release \
+            --output dist/release/runtime-manifest.json \
+            --base-url "$release_base_url"
+          ./scripts/verify-manifest.py \
+            dist/release/runtime-manifest.json \
+            --assets-dir dist/release
+
+      - name: Sign manifest
+        run: |
+          test -n "$SIGNING_KEY_B64" || {
+            echo "Missing PIPEROS_MANIFEST_SIGNING_KEY_B64 repository secret" >&2
+            exit 1
+          }
+          printf '%s' "$SIGNING_KEY_B64" | base64 --decode > "$RUNNER_TEMP/manifest-private.pem"
+          openssl pkeyutl \
+            -sign \
+            -rawin \
+            -inkey "$RUNNER_TEMP/manifest-private.pem" \
+            -in dist/release/runtime-manifest.json \
+            -out dist/release/runtime-manifest.sig
+          openssl pkeyutl \
+            -verify \
+            -rawin \
+            -pubin \
+            -inkey keys/manifest-public.pem \
+            -in dist/release/runtime-manifest.json \
+            -sigfile dist/release/runtime-manifest.sig
+          rm -f "$RUNNER_TEMP/manifest-private.pem"
+
+      - name: Create runtime release
+        run: |
+          target_tag="${GITHUB_REF_NAME#publish-}"
+          gh release create "$target_tag" \
+            --verify-tag \
+            --title "PiperOS Termux $target_tag" \
+            --notes "GPLv3 PiperOS runtime for arm64-v8a, armeabi-v7a and x86_64." \
+            dist/release/*
